@@ -100,6 +100,7 @@ final class TrackpadScrollController: @unchecked Sendable {
     }
 
     private let eventTapController = ScrollEventTapController()
+    private let mxThumbWheelDirectionLock = MXMasterThumbWheelDirectionLock()
     private let dispatcher = SyntheticScrollDispatcher()
     private let pointerLock = PointerLock()
     private let processingQueue = DispatchQueue(label: "ScrollDolmeng.trackpad")
@@ -145,7 +146,10 @@ final class TrackpadScrollController: @unchecked Sendable {
     }
 
     func start() -> Bool {
+        _ = mxThumbWheelDirectionLock.start()
+
         guard eventTapController.start() else {
+            mxThumbWheelDirectionLock.stop()
             startLifecycle.reset()
             return false
         }
@@ -174,6 +178,7 @@ final class TrackpadScrollController: @unchecked Sendable {
 
         unregisterDevices()
         eventTapController.stop()
+        mxThumbWheelDirectionLock.stop()
         startLifecycle.reset()
     }
 

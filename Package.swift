@@ -18,6 +18,7 @@ let package = Package(
             name: "ScrollDolmeng",
             dependencies: ["MultitouchSupport"],
             linkerSettings: [
+                .linkedFramework("IOKit"),
                 .linkedFramework("MultitouchSupport"),
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks"]),
             ]

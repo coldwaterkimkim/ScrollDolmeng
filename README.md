@@ -22,6 +22,7 @@ macOS의 MultitouchSupport 입력을 읽고, 사용자가 정한 trigger key가 
 - 메뉴바 표시 여부 설정
 - Accessibility / Input Monitoring 권한 안내
 - 설정 마이그레이션과 스크롤 동작 테스트
+- MX Master 3S Bluetooth thumb wheel 방향을 `STANDARD`로 고정
 
 ## 기술 구성
 
@@ -45,14 +46,22 @@ swift build
 swift test
 ```
 
-로컬 앱 번들 생성:
+`/Applications`에 앱 번들 생성:
 
 ```bash
 ./scripts/build_app.sh
 ```
 
+빌드 후 기존 프로세스를 교체해 실행:
+
+```bash
+./script/build_and_run.sh
+```
+
 ## 권한과 현재 범위
 
 이 앱은 입력 장치와 synthetic event를 다루기 때문에 macOS Accessibility/Input Monitoring 권한이 필요합니다.
+
+MX Master 3S 방향 고정은 Logitech Bluetooth 장치(`046d:b034`)의 물리 `AC Pan` 신호와 Logi Options+가 만든 스크롤 이벤트가 짧은 시간 안에 일치할 때만 적용됩니다. Apple 트랙패드, MX의 메인 세로 휠, 앱이 만드는 원핑거 스크롤에는 적용되지 않습니다.
 
 또한 private `MultitouchSupport` framework를 사용하므로 App Store 배포용 제품이 아니라 로컬 macOS 유틸리티 프로토타입입니다. 목적은 트랙패드 조작감을 실험하고, 설정 가능한 작은 입력 도구를 직접 구현해보는 것입니다.

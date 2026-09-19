@@ -3,6 +3,64 @@ import Foundation
 import Testing
 @testable import ScrollDolmeng
 
+@Test func mxThumbWheelMapsRawPanToHardCodedStandardDirection() async throws {
+    var state = MXThumbWheelDirectionState()
+
+    state.recordThumbWheel(rawValue: 1, at: 10)
+    #expect(state.consumeTargetSignForScrollEvent(at: 10.01) == -1)
+
+    state.recordThumbWheel(rawValue: -1, at: 11)
+    #expect(state.consumeTargetSignForScrollEvent(at: 11.01) == 1)
+}
+
+@Test func mxMainWheelCancelsThumbWheelCorrection() async throws {
+    var state = MXThumbWheelDirectionState()
+
+    state.recordThumbWheel(rawValue: 1, at: 10)
+    state.recordMainWheel(rawValue: -1, at: 10.04)
+
+    #expect(state.consumeTargetSignForScrollEvent(at: 10.05) == nil)
+}
+
+@Test func mxThumbWheelCorrectionExpiresAndIsConsumedBeforeUnrelatedScrolling() async throws {
+    var state = MXThumbWheelDirectionState()
+
+    state.recordThumbWheel(rawValue: 1, at: 10)
+    #expect(state.consumeTargetSignForScrollEvent(at: 10.01) == -1)
+    #expect(state.consumeTargetSignForScrollEvent(at: 10.02) == nil)
+
+    state.recordThumbWheel(rawValue: 1, at: 11)
+    #expect(state.consumeTargetSignForScrollEvent(at: 11.06) == nil)
+}
+
+@Test func mxThumbWheelCorrectionFlipsEveryHorizontalAxisDeltaRepresentationTogether() async throws {
+    guard let event = CGEvent(
+        scrollWheelEvent2Source: nil,
+        units: .pixel,
+        wheelCount: 2,
+        wheel1: 0,
+        wheel2: 7,
+        wheel3: 0
+    ) else {
+        Issue.record("Failed to create test scroll event")
+        return
+    }
+    event.setIntegerValueField(.scrollWheelEventFixedPtDeltaAxis2, value: 7 << 16)
+    event.setIntegerValueField(.scrollWheelEventPointDeltaAxis2, value: 7)
+    let fields: [CGEventField] = [
+        .scrollWheelEventDeltaAxis2,
+        .scrollWheelEventFixedPtDeltaAxis2,
+        .scrollWheelEventPointDeltaAxis2,
+    ]
+    let initialValues = fields.map { event.getIntegerValueField($0) }
+
+    #expect(MXMasterThumbWheelDirectionLock.forceAxis2Sign(in: event, targetSign: -1))
+    for (field, initialValue) in zip(fields, initialValues) {
+        #expect(event.getIntegerValueField(field) == -initialValue)
+    }
+    #expect(!MXMasterThumbWheelDirectionLock.forceAxis2Sign(in: event, targetSign: -1))
+}
+
 @Test func physicsEmitsNoScrollForTinyDeadzoneMovement() async throws {
     var physics = ScrollPhysics()
     let output = physics.step(
